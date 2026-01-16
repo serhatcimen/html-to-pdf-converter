@@ -12,9 +12,6 @@
     <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
     <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
     
-    <!-- html2pdf.js CDN -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-    
     <style>
         /* Page break kuralları PDF çıktısı için */
         @page {
@@ -51,11 +48,90 @@
         /* MathJax formülleri için */
         .preview-content mjx-container {
             page-break-inside: avoid;
+            display: inline-block;
+            margin: 0.75rem 0 1.25rem 0;
+            line-height: 1.8;
+            vertical-align: middle;
+        }
+        
+        .preview-content p {
+            margin-bottom: 1.25rem;
+            line-height: 1.8;
+            padding: 0;
+        }
+        
+        .preview-content h1,
+        .preview-content h2,
+        .preview-content h3,
+        .preview-content h4,
+        .preview-content h5,
+        .preview-content h6 {
+            margin-bottom: 0.75rem;
+            margin-top: 1.5rem;
+            line-height: 1.4;
         }
         
         /* Tailwind'in scroll-smooth olması için base sınıf */
         html {
             scroll-behavior: smooth;
+        }
+        
+        /* Yazdırma için CSS kuralları */
+        @media print {
+            body {
+                background: white;
+                margin: 0;
+                padding: 0;
+            }
+            
+            header,
+            footer,
+            #clearBtn,
+            #downloadPdfBtn,
+            #htmlInput,
+            label[for="htmlInput"],
+            .mt-8 {
+                display: none !important;
+            }
+            
+            main {
+                max-width: 100% !important;
+                padding: 0 !important;
+                margin: 0 !important;
+            }
+            
+            .grid {
+                display: block !important;
+                gap: 0 !important;
+            }
+            
+            main > .grid > .flex:first-child {
+                display: none !important;
+            }
+            
+            .bg-gradient-to-r.from-blue-600.to-blue-700,
+            .bg-gradient-to-r.from-purple-600.to-purple-700 {
+                display: none !important;
+            }
+            
+            .overflow-y-auto.mb-6 {
+                overflow: visible !important;
+                height: auto !important;
+                border: none !important;
+                background: white !important;
+                padding: 0 !important;
+                margin: 0 !important;
+            }
+            
+            .preview-content {
+                width: 100%;
+                margin: 0;
+                padding: 20mm;
+            }
+            
+            .preview-content * {
+                page-break-inside: avoid;
+            }
         }
     </style>
 </head>
@@ -74,7 +150,7 @@
                         <p class="text-slate-600 text-sm mt-1">MathJax & LaTeX Destekli Dönüştürücü</p>
                     </div>
                     <div class="text-right">
-                        <div class="text-xs text-slate-500">v0.1</div>
+                        <div class="text-xs text-slate-500">v0.2</div>
                     </div>
                 </div>
             </div>
@@ -183,7 +259,7 @@
                 <div class="flex items-center justify-between">
                     <p>&copy; 2026 HTML-to-PDF Converter. Tüm hakları saklıdır.</p>
                     <div class="text-right text-slate-500">
-                        <span>v0.1</span>
+                        <span>v0.2</span>
                     </div>
                 </div>
             </div>
@@ -230,7 +306,7 @@
         }
 
         /**
-         * PDF indir butonuna tıklandığında - önce önizle, sonra indir
+         * PDF indir butonuna tıklandığında - önce önizle, sonra yazdırma ekranı aç
          */
         async function handleDownloadPDF() {
             const htmlContent = htmlInput.value.trim();
@@ -243,9 +319,9 @@
             // Önce önizle
             await renderPreview();
             
-            // Kısa bir gecikmeden sonra PDF oluştur
+            // Kısa bir gecikmeden sonra yazdırma ekranını aç
             setTimeout(() => {
-                downloadPDF();
+                window.print();
             }, 500);
         }
 
@@ -253,69 +329,8 @@
          * HTML içeriğini PDF'e dönüştürüp indir
          */
         async function downloadPDF() {
-            const htmlContent = htmlInput.value.trim();
-
-            try {
-                downloadPdfBtn.disabled = true;
-                downloadPdfBtn.innerHTML = '<svg class="w-5 h-5 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> İşleniyor...';
-                
-                // Yeni bir div oluştur ve içeriği koy
-                const pdfContent = document.createElement('div');
-                pdfContent.className = 'preview-content';
-                pdfContent.innerHTML = htmlContent;
-                
-                // Geçici olarak DOM'a ekle (MathJax'ın işlemesi için gerekli)
-                pdfContent.style.position = 'absolute';
-                pdfContent.style.visibility = 'hidden';
-                pdfContent.style.width = '210mm'; // A4 width
-                document.body.appendChild(pdfContent);
-                
-                // MathJax'ı çalıştır ve SVG render etmesini bekle
-                if (window.MathJax) {
-                    await MathJax.typesetPromise([pdfContent]);
-                    // Render sonrası biraz bekleme
-                    await new Promise(resolve => setTimeout(resolve, 1000));
-                }
-                
-                // html2pdf.js ayarları - MathJax SVG'lerini daha iyi handle etmek için
-                const opt = {
-                    margin: [15, 15, 15, 15],
-                    filename: 'document.pdf',
-                    image: { type: 'jpeg', quality: 0.98 },
-                    html2canvas: { 
-                        scale: 2,
-                        useCORS: true,
-                        allowTaint: true,
-                        logging: false,
-                        backgroundColor: '#ffffff'
-                    },
-                    jsPDF: { 
-                        unit: 'mm', 
-                        format: 'a4', 
-                        orientation: 'portrait',
-                        compress: true
-                    },
-                    pagebreak: { 
-                        mode: ['avoid-all', 'css'],
-                        before: '.page-break-before',
-                        after: '.page-break-after',
-                        avoid: ['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p']
-                    }
-                };
-                
-                // PDF oluştur ve indir
-                await html2pdf().set(opt).from(pdfContent).save();
-                
-                // Geçici elementi temizle
-                document.body.removeChild(pdfContent);
-                
-            } catch (error) {
-                console.error('PDF oluşturma hatası:', error);
-                alert('PDF oluşturulurken bir hata meydana geldi: ' + error.message);
-            } finally {
-                downloadPdfBtn.disabled = false;
-                downloadPdfBtn.innerHTML = '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10"></path></svg> PDF Olarak İndir';
-            }
+            // Bu fonksiyon artık kullanılmıyor
+            // window.print() kullanılıyor
         }
 
         /**
