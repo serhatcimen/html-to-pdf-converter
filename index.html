@@ -242,7 +242,7 @@
                                     id="htmlInput"
                                     rows="20"
                                     class="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none font-mono text-sm"
-                                    placeholder="HTML ve LaTeX kodlarını buraya yapıştırın...&#10;&#10;Örnek:&#10;&lt;h1&gt;Başlık&lt;/h1&gt;&#10;&lt;p&gt;Metinler burada...&lt;/p&gt;&#10;&#10;LaTeX formülü: $$E=mc^2$$&#10;&#10;İnline formül: $$\frac{a}{b}$$"
+                                    placeholder="HTML ve LaTeX kodlarını buraya yapıştırın...&#10;&#10;Örnek:&#10;&lt;h1&gt;Başlık&lt;/h1&gt;&#10;&lt;p&gt;Metinler burada...&lt;/p&gt;&#10;&#10;Display Formül:&#10;&lt;p&gt;$$E = mc^2$$&lt;/p&gt;&#10;&#10;Inline Formül:&#10;&lt;p&gt;Çözüm: \(x = \frac{-b \pm \sqrt{b^2 - 4ac}}{2a}\)&lt;/p&gt;"
                                 ></textarea>
                             </div>
                             
@@ -364,6 +364,9 @@
                 if (window.MathJax) {
                     await MathJax.typesetPromise([previewArea]);
                 }
+                
+                // Scroll to top
+                previewArea.parentElement.scrollTop = 0;
             } catch (error) {
                 console.error('Render hatası:', error);
                 previewArea.innerHTML = `<div class="text-red-600 p-4 bg-red-50 rounded"><strong>Hata:</strong> HTML içeriği işlenirken bir hata oluştu.<br><small>${error.message}</small></div>`;
