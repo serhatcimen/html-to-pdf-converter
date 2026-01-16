@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HTML-to-PDF Dönüştürücü | MathJax & LaTeX Destekli</title>
+    
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- MathJax 3 CDN -->
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    
+    <!-- html2pdf.js CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    
+    <style>
+        /* Page break kuralları PDF çıktısı için */
+        @page {
+            margin: 20mm;
+        }
+        
+        .preview-content {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+            line-height: 1.6;
+            color: #333;
+        }
+        
+        .preview-content * {
+            page-break-inside: avoid;
+        }
+        
+        .preview-content p,
+        .preview-content div,
+        .preview-content section,
+        .preview-content article {
+            page-break-inside: avoid;
+        }
+        
+        .preview-content h1,
+        .preview-content h2,
+        .preview-content h3,
+        .preview-content h4,
+        .preview-content h5,
+        .preview-content h6 {
+            page-break-inside: avoid;
+            page-break-after: avoid;
+        }
+        
+        /* MathJax formülleri için */
+        .preview-content mjx-container {
+            page-break-inside: avoid;
+        }
+        
+        /* Tailwind'in scroll-smooth olması için base sınıf */
+        html {
+            scroll-behavior: smooth;
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-slate-50 to-slate-100 min-h-screen">
+    <div class="min-h-screen flex flex-col">
+        <!-- Header -->
+        <header class="bg-white shadow-md border-b border-slate-200">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h1 class="text-3xl font-bold text-slate-900">
+                            <span class="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                                HTML-to-PDF
+                            </span>
+                        </h1>
+                        <p class="text-slate-600 text-sm mt-1">MathJax & LaTeX Destekli Dönüştürücü</p>
+                    </div>
+                    <div class="text-right">
+                        <div class="text-xs text-slate-500">v0.1</div>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                
+                <!-- Sol Panel - Input -->
+                <div class="flex flex-col">
+                    <div class="bg-white rounded-lg shadow-lg overflow-hidden flex flex-col h-full">
+                        <div class="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-4">
+                            <h2 class="text-lg font-semibold text-white">HTML & LaTeX Giriş</h2>
+                            <p class="text-blue-100 text-xs mt-1">MathJax formatında formüller yazabilirsiniz</p>
+                        </div>
+                        
+                        <div class="flex-1 p-6 flex flex-col">
+                            <div class="mb-4">
+                                <label for="htmlInput" class="block text-sm font-medium text-slate-700 mb-2">
+                                    HTML Kod
+                                </label>
+                                <textarea
+                                    id="htmlInput"
+                                    rows="20"
+                                    class="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none font-mono text-sm"
+                                    placeholder="HTML ve LaTeX kodlarını buraya yapıştırın...&#10;&#10;Örnek:&#10;&lt;h1&gt;Başlık&lt;/h1&gt;&#10;&lt;p&gt;Metinler burada...&lt;/p&gt;&#10;&#10;LaTeX formülü: $$E=mc^2$$&#10;&#10;İnline formül: $$\frac{a}{b}$$"
+                                ></textarea>
+                            </div>
+                            
+                            <div class="flex gap-2">
+                                <button
+                                    id="previewBtn"
+                                    class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200 flex items-center justify-center gap-2"
+                                >
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                                    </svg>
+                                    Önizle
+                                </button>
+                                <button
+                                    id="clearBtn"
+                                    class="flex-1 bg-slate-500 hover:bg-slate-600 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200 flex items-center justify-center gap-2"
+                                >
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                    </svg>
+                                    Temizle
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sağ Panel - Preview & PDF -->
+                <div class="flex flex-col">
+                    <div class="bg-white rounded-lg shadow-lg overflow-hidden flex flex-col h-full">
+                        <div class="bg-gradient-to-r from-purple-600 to-purple-700 px-6 py-4">
+                            <h2 class="text-lg font-semibold text-white">Önizleme & PDF</h2>
+                            <p class="text-purple-100 text-xs mt-1">Dönüştürülen içerik burada gösterilir</p>
+                        </div>
+                        
+                        <div class="flex-1 p-6 flex flex-col overflow-hidden">
+                            <!-- Preview Area -->
+                            <div class="flex-1 overflow-y-auto mb-6 border border-slate-200 rounded-lg p-4 bg-slate-50">
+                                <div
+                                    id="previewArea"
+                                    class="preview-content prose prose-sm max-w-none"
+                                >
+                                    <div class="text-center text-slate-400">
+                                        <p class="text-lg">📄 Önizleme alanı</p>
+                                        <p class="text-sm">Kod yazıp "Önizle" butonuna basarak başlayın</p>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- PDF Download Button -->
+                            <button
+                                id="downloadPdfBtn"
+                                class="w-full bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white font-bold py-3 px-4 rounded-lg transition-all duration-200 flex items-center justify-center gap-2 shadow-md hover:shadow-lg"
+                            >
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10"></path>
+                                </svg>
+                                PDF Olarak İndir
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Örnekler -->
+            <div class="mt-8 bg-white rounded-lg shadow-lg p-6">
+                <h3 class="text-lg font-semibold text-slate-900 mb-4">📚 Örnek Kullanım</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="bg-slate-50 p-4 rounded-lg">
+                        <h4 class="font-medium text-slate-700 mb-2">Display Formül</h4>
+                        <code class="text-xs text-slate-600">$$E = mc^2$$</code>
+                    </div>
+                    <div class="bg-slate-50 p-4 rounded-lg">
+                        <h4 class="font-medium text-slate-700 mb-2">Inline Formül</h4>
+                        <code class="text-xs text-slate-600">\(ax^2 + bx + c = 0\)</code>
+                    </div>
+                    <div class="bg-slate-50 p-4 rounded-lg col-span-1 md:col-span-2">
+                        <h4 class="font-medium text-slate-700 mb-2">Kompleks Örnek</h4>
+                        <code class="text-xs text-slate-600">$$\frac{-b \pm \sqrt{b^2 - 4ac}}{2a}$$</code>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Footer -->
+        <footer class="bg-slate-900 text-slate-400 text-xs py-4 mt-12">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex items-center justify-between">
+                    <p>&copy; 2026 HTML-to-PDF Converter. Tüm hakları saklıdır.</p>
+                    <div class="text-right text-slate-500">
+                        <span>v0.1</span>
+                    </div>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <script>
+        // DOM Elements
+        const htmlInput = document.getElementById('htmlInput');
+        const previewArea = document.getElementById('previewArea');
+        const previewBtn = document.getElementById('previewBtn');
+        const clearBtn = document.getElementById('clearBtn');
+        const downloadPdfBtn = document.getElementById('downloadPdfBtn');
+
+        // Event Listeners
+        previewBtn.addEventListener('click', renderPreview);
+        clearBtn.addEventListener('click', clearAll);
+        downloadPdfBtn.addEventListener('click', downloadPDF);
+
+        // Auto-render on input
+        htmlInput.addEventListener('input', debounce(renderPreview, 500));
+
+        /**
+         * Kullanıcının girdiği HTML'i önizleme alanında render eder
+         */
+        async function renderPreview() {
+            const htmlContent = htmlInput.value.trim();
+            
+            if (!htmlContent) {
+                previewArea.innerHTML = '<div class="text-center text-slate-400"><p class="text-lg">📄 Önizleme alanı</p><p class="text-sm">Kod yazıp "Önizle" butonuna basarak başlayın</p></div>';
+                return;
+            }
+
+            try {
+                // İçeriği render et
+                previewArea.innerHTML = htmlContent;
+                
+                // MathJax'ı çalıştır
+                if (window.MathJax) {
+                    await MathJax.typesetPromise([previewArea]);
+                }
+            } catch (error) {
+                console.error('Render hatası:', error);
+                previewArea.innerHTML = `<div class="text-red-600 p-4 bg-red-50 rounded"><strong>Hata:</strong> HTML içeriği işlenirken bir hata oluştu.<br><small>${error.message}</small></div>`;
+            }
+        }
+
+        /**
+         * HTML içeriğini PDF'e dönüştürüp indir
+         */
+        async function downloadPDF() {
+            const htmlContent = htmlInput.value.trim();
+            
+            if (!htmlContent) {
+                alert('Lütfen önce HTML içeriği girin.');
+                return;
+            }
+
+            try {
+                downloadPdfBtn.disabled = true;
+                downloadPdfBtn.innerHTML = '<svg class="w-5 h-5 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> İşleniyor...';
+                
+                // Yeni bir div oluştur ve içeriği koy
+                const pdfContent = document.createElement('div');
+                pdfContent.className = 'preview-content';
+                pdfContent.innerHTML = htmlContent;
+                
+                // Geçici olarak DOM'a ekle (MathJax'ın işlemesi için gerekli)
+                document.body.appendChild(pdfContent);
+                
+                // MathJax'ı çalıştır
+                if (window.MathJax) {
+                    await MathJax.typesetPromise([pdfContent]);
+                }
+                
+                // html2pdf.js ayarları
+                const opt = {
+                    margin: 10,
+                    filename: 'document.pdf',
+                    image: { type: 'jpeg', quality: 0.98 },
+                    html2canvas: { scale: 2 },
+                    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+                    pagebreak: { mode: ['avoid-all', 'css'] }
+                };
+                
+                // PDF oluştur ve indir
+                await html2pdf().set(opt).from(pdfContent).save();
+                
+                // Geçici elementi temizle
+                document.body.removeChild(pdfContent);
+                
+            } catch (error) {
+                console.error('PDF oluşturma hatası:', error);
+                alert('PDF oluşturulurken bir hata meydana geldi: ' + error.message);
+            } finally {
+                downloadPdfBtn.disabled = false;
+                downloadPdfBtn.innerHTML = '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10"></path></svg> PDF Olarak İndir';
+            }
+        }
+
+        /**
+         * Tüm alanları temizle
+         */
+        function clearAll() {
+            if (confirm('Tüm içeriği silmek istediğinize emin misiniz?')) {
+                htmlInput.value = '';
+                previewArea.innerHTML = '<div class="text-center text-slate-400"><p class="text-lg">📄 Önizleme alanı</p><p class="text-sm">Kod yazıp "Önizle" butonuna basarak başlayın</p></div>';
+                htmlInput.focus();
+            }
+        }
+
+        /**
+         * Debounce fonksiyonu - sık tetiklenen olayları azaltmak için
+         */
+        function debounce(func, wait) {
+            let timeout;
+            return function executedFunction(...args) {
+                const later = () => {
+                    clearTimeout(timeout);
+                    func(...args);
+                };
+                clearTimeout(timeout);
+                timeout = setTimeout(later, wait);
+            };
+        }
+
+        // Sayfa yüklendiğinde örnek içerik göster
+        window.addEventListener('load', () => {
+            console.log('✅ Uygulama başarıyla yüklendi');
+            if (htmlInput.value === '') {
+                // İlk yükleme mesajı göster
+            }
+        });
+    </script>
+</body>
+</html>
